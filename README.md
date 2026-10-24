@@ -1,6 +1,6 @@
-# Sudoku Sprouts
+# סודוקו לילדים (Sudoku for Kids)
 
-A friendly sudoku game that teaches kids how to play. It's a single web page that works on iPhone, iPad and computers.
+A friendly sudoku game in Hebrew that teaches kids how to play. It's a single web page that works on iPhone, iPad and computers.
 
 ## Levels
 
@@ -20,7 +20,7 @@ A friendly sudoku game that teaches kids how to play. It's a single web page tha
 
 ## Just for fun
 
-- Play with numbers, animals 🐶, fruit 🍎 or colors 🔴
+- Play with numbers or animals 🐶
 - Colored boxes, sounds, confetti and star ratings
 - Sticker book: earn a sticker for every puzzle you solve
 - Suggests the next challenge when a puzzle goes well

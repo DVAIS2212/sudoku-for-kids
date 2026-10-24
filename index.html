@@ -1,18 +1,18 @@
 <!doctype html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sudoku Sprouts</title>
-<meta name="description" content="A friendly sudoku game that teaches kids how to play.">
+<title>סודוקו לילדים</title>
+<meta name="description" content="משחק סודוקו ידידותי שמלמד ילדים איך לשחק.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Sudoku">
+<meta name="apple-mobile-web-app-title" content="סודוקו">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Rubik:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* Layout: one centered play column; each sudoku box gets its own soft color so kids can see the boxes */
   :root {
@@ -40,8 +40,8 @@
     --key-shadow: #c3d4e6;
     --b1: #fde0e3; --b2: #dff0c6; --b3: #d8e7fd; --b4: #fff0bd; --b5: #e8dcff;
     --b6: #ffdcc4; --b7: #cff3ec; --b8: #f9d8ef; --b9: #e4e8f0;
-    --display: "Fredoka", "Nunito", ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
-    --body: "Nunito", ui-rounded, system-ui, -apple-system, sans-serif;
+    --display: "Fredoka", "Rubik", ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+    --body: "Rubik", ui-rounded, system-ui, -apple-system, sans-serif;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
@@ -122,7 +122,9 @@
   .status { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .status-left { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .chip { align-self: flex-start; background: var(--chip); border-radius: 999px; padding: 6px 12px; font-weight: 800; font-size: .88rem; white-space: nowrap; }
-  .score { color: var(--muted); font-weight: 700; font-size: .82rem; padding-left: 4px; }
+  .score { color: var(--muted); font-weight: 700; font-size: .82rem; padding-inline-start: 4px; }
+  /* sudoku boards and the number pad read left to right, as they do in Hebrew puzzle books */
+  .board, .pad, .mini { direction: ltr; }
 
   .btn {
     border: 0; border-radius: 14px; padding: 10px 16px; min-height: 44px;
@@ -140,9 +142,9 @@
     box-shadow: 0 2px 0 var(--thin);
   }
   .bubble::before {
-    content: ""; position: absolute; left: -8px; top: 12px;
+    content: ""; position: absolute; inset-inline-start: -8px; top: 12px;
     border-top: 8px solid transparent; border-bottom: 8px solid transparent;
-    border-right: 8px solid var(--surface);
+    border-inline-end: 8px solid var(--surface);
   }
   .bubble.bump { animation: bump .35s; }
 
@@ -245,7 +247,7 @@
   .opt b { font-family: var(--display); font-weight: 600; font-size: 1.3rem; }
   .opt span { font-size: .78rem; font-weight: 700; color: var(--muted); }
   .opt.on { border-color: var(--kid); background: var(--surface-2); }
-  #themeOpts { grid-template-columns: repeat(4, 1fr); }
+  #themeOpts { grid-template-columns: repeat(2, 1fr); }
 
   .mini {
     display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr);
@@ -291,12 +293,12 @@
   <header>
     <div class="brand">
       <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-      <h1>Sudoku Sprouts</h1>
+      <h1>סודוקו לילדים</h1>
     </div>
     <div class="icons">
-      <button class="icon-btn" id="helpBtn" aria-label="How to play">❓</button>
-      <button class="icon-btn" id="bookBtn" aria-label="My stickers">🏅<span class="badge" id="bookCount">0</span></button>
-      <button class="icon-btn" id="soundBtn" aria-label="Sound on or off">🔊</button>
+      <button class="icon-btn" id="helpBtn" aria-label="איך משחקים">❓</button>
+      <button class="icon-btn" id="bookBtn" aria-label="המדבקות שלי">🏅<span class="badge" id="bookCount">0</span></button>
+      <button class="icon-btn" id="soundBtn" aria-label="הפעלה או כיבוי של צלילים">🔊</button>
     </div>
   </header>
 
@@ -305,7 +307,7 @@
       <span class="chip" id="gameChip"></span>
       <span class="score" id="score"></span>
     </div>
-    <button class="btn primary" id="newBtn">New game</button>
+    <button class="btn primary" id="newBtn">משחק חדש</button>
   </div>
 
   <div class="coach">
@@ -313,13 +315,13 @@
     <div class="bubble" id="bubble" aria-live="polite"></div>
   </div>
 
-  <div class="board" id="board" role="grid" aria-label="Sudoku board"></div>
+  <div class="board" id="board" role="grid" aria-label="לוח סודוקו"></div>
 
   <div class="tools">
-    <button class="tool" id="undoBtn"><span class="ic">↩️</span>Undo</button>
-    <button class="tool" id="notesBtn" aria-pressed="false"><span class="ic">✏️</span>Notes</button>
-    <button class="tool" id="eraseBtn"><span class="ic">🧽</span>Erase</button>
-    <button class="tool" id="hintBtn"><span class="ic">💡</span><span id="hintLabel">Clue</span></button>
+    <button class="tool" id="undoBtn"><span class="ic">↩️</span>ביטול</button>
+    <button class="tool" id="notesBtn" aria-pressed="false"><span class="ic">✏️</span>הערות</button>
+    <button class="tool" id="eraseBtn"><span class="ic">🧽</span>מחיקה</button>
+    <button class="tool" id="hintBtn"><span class="ic">💡</span><span id="hintLabel">רמז</span></button>
   </div>
 
   <div class="pad" id="pad"></div>
@@ -328,16 +330,16 @@
 <!-- New game -->
 <div class="sheet" id="setupSheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
-    <h2 id="setupTitle">New game</h2>
-    <h3>How tricky?</h3>
+    <h2 id="setupTitle">משחק חדש</h2>
+    <h3>כמה קשה?</h3>
     <div class="opts" id="levelOpts"></div>
-    <h3>How big?</h3>
+    <h3>כמה גדול?</h3>
     <div class="opts" id="sizeOpts"></div>
-    <h3>Play with</h3>
+    <h3>משחקים עם</h3>
     <div class="opts" id="themeOpts"></div>
     <div class="row-end">
-      <button class="btn" id="setupCancel">Back</button>
-      <button class="btn primary" id="setupGo">Let's play!</button>
+      <button class="btn" id="setupCancel">חזרה</button>
+      <button class="btn primary" id="setupGo">יאללה, משחקים!</button>
     </div>
   </div>
 </div>
@@ -350,8 +352,8 @@
     <p id="helpText"></p>
     <div class="dots" id="helpDots"></div>
     <div class="row-end">
-      <button class="btn" id="helpBack">Back</button>
-      <button class="btn primary" id="helpNext">Next</button>
+      <button class="btn" id="helpBack">הקודם</button>
+      <button class="btn primary" id="helpNext">הבא</button>
     </div>
   </div>
 </div>
@@ -359,11 +361,11 @@
 <!-- Sticker book -->
 <div class="sheet" id="bookSheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="bookTitle">
-    <h2 id="bookTitle">My sticker book</h2>
+    <h2 id="bookTitle">אלבום המדבקות שלי</h2>
     <p id="bookText"></p>
     <div class="book" id="book"></div>
     <p class="wins" id="winsText"></p>
-    <div class="row-end"><button class="btn primary" id="bookClose">Close</button></div>
+    <div class="row-end"><button class="btn primary" id="bookClose">סגירה</button></div>
   </div>
 </div>
 
@@ -371,14 +373,14 @@
 <div class="sheet" id="winSheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="winTitle">
     <div class="win-top">
-      <h2 id="winTitle">You solved it!</h2>
+      <h2 id="winTitle">פתרתם!</h2>
       <div class="stars" id="winStars"></div>
       <p id="winText"></p>
       <div class="sticker-big" id="winSticker"></div>
       <p id="stickerText"></p>
     </div>
     <div class="row-end">
-      <button class="btn" id="winSame">Play again</button>
+      <button class="btn" id="winSame">שחקו שוב</button>
       <button class="btn primary" id="winNext"></button>
     </div>
   </div>
@@ -388,26 +390,30 @@
 const THEMES = {
   numbers: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
   animals: ["🐶", "🐱", "🐸", "🐵", "🐷", "🦁", "🐼", "🐰", "🐤"],
-  fruit:   ["🍎", "🍌", "🍇", "🍊", "🍓", "🍉", "🍍", "🍒", "🥝"],
-  colors:  ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "🟤", "⚫", "⚪"],
 };
 const THEME_INFO = {
-  numbers: ["123", "Numbers"], animals: ["🐶", "Animals"], fruit: ["🍎", "Fruit"], colors: ["🔴", "Colors"],
+  numbers: ["123", "מספרים"], animals: ["🐶", "חיות"],
 };
 // box shape [rows, cols] for each board size
 const BOX = { 4: [2, 2], 6: [2, 3], 9: [3, 3] };
 // keep = share of squares already filled in when the game starts
 const LEVELS = {
-  easy:   { name: "Easy",   sizes: [4, 6], keep: { 4: 0.62, 6: 0.6 },  blurb: "4 or 6" },
-  medium: { name: "Medium", sizes: [6, 9], keep: { 6: 0.5, 9: 0.52 },  blurb: "6 or 9" },
-  hard:   { name: "Hard",   sizes: [9],    keep: { 9: 0.4 },           blurb: "9" },
+  easy:   { name: "קל",     sizes: [4, 6], keep: { 4: 0.62, 6: 0.6 },  blurb: "4 או 6" },
+  medium: { name: "בינוני", sizes: [6, 9], keep: { 6: 0.5, 9: 0.52 },  blurb: "6 או 9" },
+  hard:   { name: "קשה",    sizes: [9],    keep: { 9: 0.4 },           blurb: "9" },
 };
-const SIZE_NAME = { 4: "Little", 6: "Middle", 9: "Big" };
+const SIZE_NAME = { 4: "קטן", 6: "אמצעי", 9: "גדול" };
+// Hebrew needs different words around row (f.), column (f.) and box (m.)
+const UNIT_TEXT = {
+  row:    { inThis: "בשורה הזאת",  done: "סיימתם שורה!" },
+  column: { inThis: "בעמודה הזאת", done: "סיימתם עמודה!" },
+  box:    { inThis: "בריבוע הזה",  done: "סיימתם ריבוע!" },
+};
 // the path kids grow through, used to suggest the next challenge
 const LADDER = [["easy", 4], ["easy", 6], ["medium", 6], ["medium", 9], ["hard", 9]];
 const STICKERS = ["🦄", "🐙", "🦖", "🚀", "🌈", "🍦", "🎈", "🐢", "🦋", "🐳", "🌻", "🍩",
                   "⚽", "🎸", "🦊", "🐝", "🍕", "🏰", "🧸", "🦜", "🌙", "🐧", "🎨", "🏆"];
-const CHEERS = ["Great job!", "You got it!", "Super!", "Nice thinking!", "Yes!", "Awesome!"];
+const CHEERS = ["כל הכבוד!", "מעולה!", "יופי!", "חשיבה טובה!", "כן!", "מדהים!"];
 const GAME_KEY = "sudoku-sprouts-game";
 const PREFS_KEY = "sudoku-sprouts-prefs";
 
@@ -582,9 +588,9 @@ function say(text) {
 function save() { store(GAME_KEY, S); }
 
 function startTip() {
-  if (S.level === "easy") return "Tap a square, then tap what goes in it. Every row, column and colored box needs each one just once.";
-  if (S.level === "medium") return "Try the ✏️ Notes pencil to write little guesses in a square.";
-  return "Look for a square where only one thing can fit. Tap 💡 Clue if you get stuck.";
+  if (S.level === "easy") return "לחצו על משבצת, ואז על מה שנכנס בה. בכל שורה, עמודה וריבוע צבעוני כל אחד מופיע רק פעם אחת.";
+  if (S.level === "medium") return "נסו את עיפרון ✏️ ההערות כדי לכתוב ניחושים קטנים במשבצת.";
+  return "חפשו משבצת שרק דבר אחד מתאים לה. נתקעתם? לחצו על 💡 רמז.";
 }
 
 function newGame(level, size, theme) {
@@ -662,7 +668,7 @@ function render() {
         }
         d.appendChild(box);
       }
-      d.setAttribute("aria-label", `Row ${r + 1}, column ${c + 1}: ${v ? sym(v) : "empty"}`);
+      d.setAttribute("aria-label", `שורה ${r + 1}, עמודה ${c + 1}: ${v ? sym(v) : "ריקה"}`);
       d.addEventListener("click", () => select(r, c));
       board.appendChild(d);
     }
@@ -678,18 +684,18 @@ function render() {
     const left = n - flat.filter((x) => x === v).length;
     const b = document.createElement("button");
     b.className = "key" + (left === 0 ? " done" : "");
-    b.innerHTML = `<span></span><small>${left === 0 ? "✓" : left + " left"}</small>`;
+    b.innerHTML = `<span></span><small>${left === 0 ? "✓" : "עוד " + left}</small>`;
     b.firstChild.textContent = sym(v);
-    b.setAttribute("aria-label", `${sym(v)}, ${left} left`);
+    b.setAttribute("aria-label", `${sym(v)}, נשארו ${left}`);
     b.addEventListener("click", () => place(v));
     pad.appendChild(b);
   }
 
   $("gameChip").textContent = `${LEVELS[S.level].name} · ${n}×${n} · ${THEME_INFO[S.theme][0]}`;
-  $("score").textContent = `Oops ${S.oops} · Clues ${S.hints}`;
+  $("score").textContent = `טעויות ${S.oops} · רמזים ${S.hints}`;
   $("undoBtn").disabled = history.length === 0;
   $("notesBtn").setAttribute("aria-pressed", String(notesMode));
-  $("hintLabel").textContent = clue ? "Show me" : "Clue";
+  $("hintLabel").textContent = clue ? "תראו לי" : "רמז";
   $("soundBtn").textContent = prefs.sound ? "🔊" : "🔇";
   $("bookCount").textContent = Object.keys(prefs.stickers).length;
 }
@@ -730,9 +736,9 @@ function conflictFor(r, c, v) {
 
 function place(v) {
   if (!S || S.done) return;
-  if (!selected) { say("First tap an empty square on the board."); return; }
+  if (!selected) { say("קודם לחצו על משבצת ריקה בלוח."); return; }
   const [r, c] = selected, n = S.size;
-  if (S.puzzle[r][c]) { say("That one was there from the start. Pick an empty square!"); return; }
+  if (S.puzzle[r][c]) { say("המשבצת הזאת הייתה כאן מההתחלה. בחרו משבצת ריקה!"); return; }
 
   if (notesMode) {
     if (S.grid[r][c]) return;
@@ -748,8 +754,8 @@ function place(v) {
     S.oops++;
     const why = conflictFor(r, c, v);
     say(why
-      ? `Oops! There's already a ${sym(v)} in this ${why.kind}. Each one can only be there once.`
-      : `Hmm, ${sym(v)} doesn't go here. Try a different one!`);
+      ? `אופס! כבר יש ${sym(v)} ${UNIT_TEXT[why.kind].inThis}. כל אחד יכול להופיע שם רק פעם אחת.`
+      : `הממ, ${sym(v)} לא מתאים כאן. נסו משהו אחר!`);
     sfx.oops(); save(); render();
     const el = cellEl(r, c);
     el.textContent = sym(v);
@@ -767,13 +773,13 @@ function afterCorrect(r, c, fromClue) {
   const n = S.size;
   let message = null;
   if (clue && S.grid[clue.r][clue.c]) {
-    if (!fromClue) message = "You found it! 🎉";
+    if (!fromClue) message = "מצאתם! 🎉";
     clue = null;
   }
   const done = units(n).filter((u) =>
     u.cells.some(([a, b]) => a === r && b === c) && u.cells.every(([a, b]) => S.grid[a][b]));
   done.forEach((u) => u.cells.forEach(([a, b]) => flash.add(a * n + b)));
-  if (done.length && !message) message = `${rand(CHEERS)} You finished a ${done[0].kind}!`;
+  if (done.length && !message) message = `${rand(CHEERS)} ${UNIT_TEXT[done[0].kind].done}`;
   if (message) say(message);
   else if (!fromClue && Math.random() < 0.3) say(rand(CHEERS));
 
@@ -788,7 +794,7 @@ function afterCorrect(r, c, fromClue) {
 function erase() {
   if (!selected || !S || S.done) return;
   const [r, c] = selected, n = S.size, i = r * n + c;
-  if (S.puzzle[r][c]) { say("That one was there from the start, so it stays."); return; }
+  if (S.puzzle[r][c]) { say("המשבצת הזאת הייתה כאן מההתחלה, אז היא נשארת."); return; }
   if (!S.grid[r][c] && !S.notes[i].length) return;
   record([i]);
   S.grid[r][c] = 0;
@@ -834,10 +840,10 @@ function hint() {
   clue = c;
   if (c.kind === "naked") {
     selected = [c.r, c.c];
-    say("Look at the glowing square. Check its row, its column and its box. What's missing from all three?");
+    say("הסתכלו על המשבצת הזוהרת. בדקו את השורה, העמודה והריבוע שלה. מה חסר בכל השלושה?");
   } else {
     selected = null;
-    say(`This ${c.unit.kind} still needs a ${sym(c.v)}. Only one empty square here can take it. Can you find it?`);
+    say(`עדיין חסר ${sym(c.v)} ${UNIT_TEXT[c.unit.kind].inThis}. רק משבצת ריקה אחת כאן מתאימה לו. תמצאו אותה?`);
   }
   sfx.clue();
   render();
@@ -852,11 +858,11 @@ function reveal(c) {
       if (v) seen.add(v);
     }
     const list = [...seen].sort((a, b) => a - b).map(sym).join(" ");
-    say(`Its row, column and box already have ${list}. So the only one left is ${sym(c.v)}!`);
+    say(`בשורה, בעמודה ובריבוע שלה כבר יש ${list}. אז מה שנשאר זה רק ${sym(c.v)}!`);
   } else if (c.kind === "hidden") {
-    say(`${sym(c.v)} can't go in the other empty squares of this ${c.unit.kind}, because their row, column or box already has one. So it goes here!`);
+    say(`${sym(c.v)} לא יכול להיכנס לשאר המשבצות הריקות ${UNIT_TEXT[c.unit.kind].inThis}, כי בשורה, בעמודה או בריבוע שלהן כבר יש אחד כזה. אז הוא נכנס כאן!`);
   } else {
-    say(`Here's one to help: ${sym(c.v)} goes here.`);
+    say(`הנה עזרה קטנה: ${sym(c.v)} נכנס כאן.`);
   }
   S.hints++;
   commit(c.r, c.c, c.v);
@@ -883,22 +889,22 @@ function checkWin() {
   store(PREFS_KEY, prefs);
 
   $("winStars").textContent = "⭐".repeat(stars) + "☆".repeat(3 - stars);
-  $("winText").textContent = stars === 3 ? "Perfect! No oopses and no clues." : stars === 2 ? "Really good thinking!" : "You kept going and finished. Well done!";
+  $("winText").textContent = stars === 3 ? "מושלם! בלי טעויות ובלי רמזים." : stars === 2 ? "חשיבה ממש טובה!" : "התמדתם וסיימתם. כל הכבוד!";
   $("winSticker").textContent = sticker;
-  $("stickerText").textContent = isNew ? "A new sticker for your book!" : "Another one for your collection!";
+  $("stickerText").textContent = isNew ? "מדבקה חדשה לאלבום!" : "עוד אחת לאוסף!";
 
   const at = LADDER.findIndex(([l, s]) => l === S.level && s === S.size);
   const next = stars >= 2 && at < LADDER.length - 1 ? LADDER[at + 1] : null;
   const btn = $("winNext");
   if (next) {
-    btn.textContent = `Try ${LEVELS[next[0]].name} ${next[1]}×${next[1]}`;
+    btn.textContent = `נסו ${LEVELS[next[0]].name} ${next[1]}×${next[1]}`;
     btn.onclick = () => { closeSheets(); newGame(next[0], next[1], S.theme); };
   } else {
-    btn.textContent = "Choose a game";
+    btn.textContent = "בחרו משחק";
     btn.onclick = () => openSetup();
   }
 
-  say("You did it! 🎉");
+  say("הצלחתם! 🎉");
   setTimeout(() => {
     sfx.win();
     openSheet("winSheet");
@@ -924,8 +930,8 @@ function confetti() {
 function renderBook() {
   const owned = Object.keys(prefs.stickers).length;
   $("bookText").textContent = owned
-    ? `You have ${owned} of ${STICKERS.length} stickers. Solve puzzles to find the rest!`
-    : "Solve a puzzle to get your first sticker!";
+    ? `יש לכם ${owned} מתוך ${STICKERS.length} מדבקות. פתרו עוד פאזלים כדי למצוא את השאר!`
+    : "פתרו פאזל כדי לקבל את המדבקה הראשונה!";
   const book = $("book");
   book.textContent = "";
   for (const s of STICKERS) {
@@ -941,7 +947,7 @@ function renderBook() {
     book.appendChild(d);
   }
   const w = prefs.wins;
-  $("winsText").textContent = `Puzzles solved: Easy ${w.easy || 0} · Medium ${w.medium || 0} · Hard ${w.hard || 0}`;
+  $("winsText").textContent = `פאזלים שפתרתם: קל ${w.easy || 0} · בינוני ${w.medium || 0} · קשה ${w.hard || 0}`;
 }
 
 /* ---------- sheets ---------- */
@@ -974,7 +980,7 @@ function renderSetup() {
   const lv = $("levelOpts"), sz = $("sizeOpts"), th = $("themeOpts");
   lv.textContent = sz.textContent = th.textContent = "";
   for (const [key, L] of Object.entries(LEVELS))
-    lv.appendChild(optButton(setup.level === key, L.name, L.blurb + " to fill", () => (setup.level = key)));
+    lv.appendChild(optButton(setup.level === key, L.name, L.blurb, () => (setup.level = key)));
   for (const s of sizes)
     sz.appendChild(optButton(setup.size === s, `${s}×${s}`, SIZE_NAME[s], () => (setup.size = s)));
   for (const [key, [icon, label]] of Object.entries(THEME_INFO))
@@ -991,12 +997,12 @@ function openSetup() {
 
 const EXAMPLE = [[1, 2, 3, 4], [3, 4, 1, 2], [2, 1, 4, 3], [4, 3, 2, 1]];
 const HELP = [
-  { title: "Welcome to Sudoku!", text: "Sudoku is a puzzle. You fill every empty square so that nothing is ever repeated. Here is a finished little board.", hl: () => false },
-  { title: "Rows", text: "A row goes across. Every row has each one exactly once.", hl: (r) => r === 0 },
-  { title: "Columns", text: "A column goes up and down. Every column has each one exactly once too.", hl: (r, c) => c === 1 },
-  { title: "Boxes", text: "Each colored box also has each one exactly once.", hl: (r, c) => r >= 2 && c >= 2 },
-  { title: "Find the missing one", blank: [0, 2], hl: (r) => r === 0 },
-  { title: "Stuck? Ask the owl!", owl: true, text: "Tap 💡 Clue and the owl shows you where to look. Tap it again if you want to see the answer. Use ✏️ Notes to write small guesses." },
+  { title: "ברוכים הבאים לסודוקו!", text: "סודוקו הוא פאזל. ממלאים כל משבצת ריקה כך ששום דבר לא חוזר על עצמו. הנה לוח קטן שכבר פתרו.", hl: () => false },
+  { title: "שורות", text: "שורה הולכת לרוחב. בכל שורה כל אחד מופיע בדיוק פעם אחת.", hl: (r) => r === 0 },
+  { title: "עמודות", text: "עמודה הולכת מלמעלה למטה. גם בכל עמודה כל אחד מופיע בדיוק פעם אחת.", hl: (r, c) => c === 1 },
+  { title: "ריבועים", text: "וגם בכל ריבוע צבעוני כל אחד מופיע בדיוק פעם אחת.", hl: (r, c) => r >= 2 && c >= 2 },
+  { title: "מצאו את מה שחסר", blank: [0, 2], hl: (r) => r === 0 },
+  { title: "נתקעתם? שאלו את הינשוף!", owl: true, text: "לחצו על 💡 רמז והינשוף יראה לכם איפה לחפש. לחצו שוב כדי לראות את התשובה. בעזרת ✏️ הערות אפשר לכתוב ניחושים קטנים." },
 ];
 let helpStep = 0;
 
@@ -1036,10 +1042,10 @@ function renderHelp() {
     art.appendChild(miniBoard(step));
   }
   $("helpText").textContent = step.text ||
-    `This row has ${syms[0]}, ${syms[1]} and ${syms[3]}. Which one is missing? It must be ${syms[2]}! That's how you solve every square.`;
+    `בשורה הזאת יש ${syms[0]}, ${syms[1]} ו-${syms[3]}. מה חסר? זה חייב להיות ${syms[2]}! ככה פותרים כל משבצת.`;
   $("helpDots").innerHTML = HELP.map((_, i) => `<i class="${i === helpStep ? "on" : ""}"></i>`).join("");
   $("helpBack").hidden = helpStep === 0;
-  $("helpNext").textContent = helpStep === HELP.length - 1 ? "Let's play!" : "Next";
+  $("helpNext").textContent = helpStep === HELP.length - 1 ? "יאללה, משחקים!" : "הבא";
 }
 
 function openHelp() {
@@ -1058,7 +1064,7 @@ $("eraseBtn").addEventListener("click", erase);
 $("undoBtn").addEventListener("click", undo);
 $("notesBtn").addEventListener("click", () => {
   notesMode = !notesMode;
-  say(notesMode ? "Notes are on. Tap to write small guesses. Tap ✏️ again to turn them off." : "Notes are off.");
+  say(notesMode ? "ההערות פועלות. לחצו כדי לכתוב ניחושים קטנים. לחצו שוב על ✏️ כדי לכבות." : "ההערות כבויות.");
   render();
 });
 $("soundBtn").addEventListener("click", () => {
@@ -1100,7 +1106,7 @@ document.addEventListener("keydown", (e) => {
 const saved = load(GAME_KEY);
 if (validGame(saved)) {
   S = saved;
-  say("Welcome back! Let's finish this puzzle.");
+  say("ברוכים השבים! בואו נסיים את הפאזל.");
   render();
 } else {
   newGame("easy", 4, "numbers");
