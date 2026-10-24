@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sudoku Sprouts</title>
+<meta name="description" content="A friendly sudoku game that teaches kids how to play.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sudoku">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Layout: one centered play column; each sudoku box gets its own soft color so kids can see the boxes */
+  :root {
+    --bg: #e8f2fa;
+    --surface: #ffffff;
+    --surface-2: #f3f8fd;
+    --chip: #d7e6f3;
+    --ink: #1d2742;
+    --muted: #56637f;
+    --line: #1d2742;
+    --thin: rgba(29, 39, 66, .14);
+    --kid: #2563d9;
+    --accent: #ff7043;
+    --accent-deep: #d4521f;
+    --accent-ink: #ffffff;
+    --good: #1f9d68;
+    --good-soft: rgba(31, 157, 104, .38);
+    --bad: #e5484d;
+    --sel: #ffd54a;
+    --same: rgba(255, 190, 0, .3);
+    --peer: rgba(29, 39, 66, .07);
+    --focus: rgba(37, 99, 217, .2);
+    --glow: rgba(255, 176, 32, .75);
+    --scrim: rgba(16, 24, 40, .45);
+    --key-shadow: #c3d4e6;
+    --b1: #fde0e3; --b2: #dff0c6; --b3: #d8e7fd; --b4: #fff0bd; --b5: #e8dcff;
+    --b6: #ffdcc4; --b7: #cff3ec; --b8: #f9d8ef; --b9: #e4e8f0;
+    --display: "Fredoka", "Nunito", ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+    --body: "Nunito", ui-rounded, system-ui, -apple-system, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111827;
+      --surface: #1b2436;
+      --surface-2: #232e45;
+      --chip: #263250;
+      --ink: #eef2fa;
+      --muted: #a4b1ca;
+      --line: #c5d1e6;
+      --thin: rgba(197, 209, 230, .16);
+      --kid: #8db7ff;
+      --accent: #ff8a5c;
+      --accent-deep: #b9542c;
+      --accent-ink: #1a1208;
+      --good: #3fcf8e;
+      --good-soft: rgba(63, 207, 142, .35);
+      --bad: #ff6b6b;
+      --sel: #7a5d12;
+      --same: rgba(255, 196, 0, .22);
+      --peer: rgba(255, 255, 255, .06);
+      --focus: rgba(141, 183, 255, .22);
+      --glow: rgba(255, 190, 70, .55);
+      --scrim: rgba(0, 0, 0, .6);
+      --key-shadow: #0b101c;
+      --b1: #4a2a31; --b2: #31432a; --b3: #213451; --b4: #4a4020; --b5: #382d57;
+      --b6: #4d3322; --b7: #1d4541; --b8: #4a2844; --b9: #313949;
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-text-size-adjust: 100%;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+  button:focus-visible { outline: 3px solid var(--kid); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  .app {
+    max-width: 560px;
+    margin: 0 auto;
+    padding-block: max(12px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .logo { width: 34px; height: 34px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; flex: none; }
+  .logo i { border-radius: 6px; }
+  .logo i:nth-child(1) { background: #ff8fa0; } .logo i:nth-child(2) { background: #8fd46a; }
+  .logo i:nth-child(3) { background: #6fa3ff; } .logo i:nth-child(4) { background: #ffcf4a; }
+  h1 { font-family: var(--display); font-weight: 700; font-size: clamp(1.15rem, 5vw, 1.55rem); margin: 0; white-space: nowrap; }
+  .icons { display: flex; gap: 6px; }
+  .icon-btn {
+    width: 42px; height: 42px; border-radius: 14px; border: 0; background: var(--chip);
+    font-size: 1.25rem; position: relative; display: grid; place-items: center;
+  }
+  .badge {
+    position: absolute; top: -5px; right: -5px; min-width: 20px;
+    background: var(--accent); color: var(--accent-ink);
+    font: 800 .7rem/1 var(--body); padding: 4px 5px; border-radius: 999px;
+  }
+
+  .status { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .status-left { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .chip { align-self: flex-start; background: var(--chip); border-radius: 999px; padding: 6px 12px; font-weight: 800; font-size: .88rem; white-space: nowrap; }
+  .score { color: var(--muted); font-weight: 700; font-size: .82rem; padding-left: 4px; }
+
+  .btn {
+    border: 0; border-radius: 14px; padding: 10px 16px; min-height: 44px;
+    font: 800 1rem var(--body); background: var(--chip); color: var(--ink);
+  }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 3px 0 var(--accent-deep); }
+  .btn.primary:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-deep); }
+
+  .coach { display: flex; gap: 10px; align-items: flex-start; }
+  .owl { font-size: 2.1rem; line-height: 1; flex: none; }
+  .bubble {
+    flex: 1; min-width: 0; position: relative;
+    background: var(--surface); border-radius: 16px; padding: 10px 14px;
+    font-weight: 700; font-size: 1rem; line-height: 1.4; min-height: 3.2em;
+    box-shadow: 0 2px 0 var(--thin);
+  }
+  .bubble::before {
+    content: ""; position: absolute; left: -8px; top: 12px;
+    border-top: 8px solid transparent; border-bottom: 8px solid transparent;
+    border-right: 8px solid var(--surface);
+  }
+  .bubble.bump { animation: bump .35s; }
+
+  .board {
+    display: grid; width: 100%; max-width: 100%; aspect-ratio: 1;
+    border: 3px solid var(--line); border-radius: 16px; overflow: hidden;
+    container-type: inline-size; background: var(--surface);
+  }
+  .cell {
+    appearance: none; -webkit-appearance: none; margin: 0; padding: 0; border: 0;
+    border-right: 1px solid var(--thin); border-bottom: 1px solid var(--thin);
+    background: var(--bx); color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    min-width: 0; min-height: 0; position: relative; line-height: 1;
+    font-family: var(--display); font-weight: 600;
+    font-size: calc(100cqi / var(--n) * .56);
+  }
+  .emoji .cell { font-size: calc(100cqi / var(--n) * .5); }
+  .cell.br { border-right: 3px solid var(--line); }
+  .cell.bb { border-bottom: 3px solid var(--line); }
+  .cell.lc { border-right: 0; }
+  .cell.lr { border-bottom: 0; }
+  .cell.kid { color: var(--kid); }
+  .cell.peer { box-shadow: inset 0 0 0 999px var(--peer); }
+  .cell.focus { box-shadow: inset 0 0 0 999px var(--focus); }
+  .cell.same { box-shadow: inset 0 0 0 999px var(--same); }
+  .cell.sel { background: var(--sel); box-shadow: none; }
+  .cell.glow { animation: glow 1.2s ease-in-out infinite; }
+  .cell.wrong { background: var(--bad); color: #fff; animation: shake .35s; }
+  .cell.conflict { animation: blink .35s 2; box-shadow: inset 0 0 0 4px var(--bad); }
+  .cell.cheer { animation: cheer .9s; }
+  .cell.pop { animation: pop .3s; }
+  .cell:focus-visible { outline: 3px solid var(--kid); outline-offset: -3px; }
+  .notes {
+    display: grid; width: 100%; height: 100%; padding: 5%;
+    align-items: center; justify-items: center;
+    font-family: var(--body); font-weight: 800; color: var(--muted);
+    font-size: calc(100cqi / var(--n) * .21);
+  }
+
+  @keyframes glow { 50% { box-shadow: inset 0 0 0 999px var(--glow); } }
+  @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  @keyframes blink { 50% { box-shadow: inset 0 0 0 999px var(--bad); } }
+  @keyframes cheer { 35% { box-shadow: inset 0 0 0 999px var(--good-soft); transform: scale(1.06); } }
+  @keyframes pop { 50% { transform: scale(1.25); } }
+  @keyframes bump { 40% { transform: scale(1.03); } }
+
+  .tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .tool {
+    border: 0; border-radius: 14px; background: var(--chip); min-height: 52px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    font-weight: 800; font-size: .82rem; padding: 6px 4px;
+  }
+  .tool .ic { font-size: 1.3rem; line-height: 1; }
+  .tool[aria-pressed="true"] { background: var(--kid); color: var(--surface); }
+  .tool:disabled { opacity: .4; }
+
+  .pad { display: grid; gap: 6px; }
+  .key {
+    border: 0; border-radius: 14px; background: var(--surface);
+    box-shadow: 0 3px 0 var(--key-shadow); padding: 8px 0 6px; min-height: 56px; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    font-family: var(--display); font-weight: 600; color: var(--kid);
+    font-size: clamp(1.4rem, 7vw, 2.1rem); line-height: 1;
+  }
+  .pad.nine .key { font-size: clamp(1.1rem, 5.2vw, 1.7rem); }
+  .key small { font: 800 .65rem/1 var(--body); color: var(--muted); }
+  .key:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--key-shadow); }
+  .key.done { opacity: .3; }
+  .pad.notes-on .key { box-shadow: 0 3px 0 var(--kid); }
+
+  /* sheets */
+  .sheet {
+    position: fixed; inset: 0; z-index: 20; background: var(--scrim);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .panel {
+    background: var(--surface); width: 100%; max-width: 540px; max-height: 92%; overflow: auto;
+    border-radius: 24px 24px 0 0;
+    padding: 20px max(20px, env(safe-area-inset-right, 0px)) max(22px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+    display: flex; flex-direction: column; gap: 14px;
+    animation: rise .25s ease-out;
+  }
+  @media (min-width: 640px) {
+    .sheet { align-items: center; padding: 24px; }
+    .panel { border-radius: 24px; }
+  }
+  @keyframes rise { from { transform: translateY(30px); opacity: 0; } }
+  .panel h2 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; margin: 0; text-wrap: balance; }
+  .panel h3 { margin: 0; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .panel p { margin: 0; line-height: 1.5; font-weight: 700; }
+  .row-end { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+  .row-end .btn { flex: 1 1 auto; }
+
+  .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; }
+  .opt {
+    border: 3px solid transparent; background: var(--chip); border-radius: 16px; padding: 10px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-height: 64px;
+  }
+  .opt b { font-family: var(--display); font-weight: 600; font-size: 1.3rem; }
+  .opt span { font-size: .78rem; font-weight: 700; color: var(--muted); }
+  .opt.on { border-color: var(--kid); background: var(--surface-2); }
+  #themeOpts { grid-template-columns: repeat(4, 1fr); }
+
+  .mini {
+    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr);
+    width: min(220px, 70%); aspect-ratio: 1; margin: 0 auto;
+    border: 3px solid var(--line); border-radius: 12px; overflow: hidden; container-type: inline-size;
+  }
+  .mini .cell { cursor: default; }
+  .dots { display: flex; gap: 6px; justify-content: center; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--chip); }
+  .dots i.on { background: var(--kid); }
+  .big-owl { font-size: 4rem; text-align: center; }
+
+  .win-top { text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .stars { font-size: 2.6rem; letter-spacing: 6px; }
+  .sticker-big { font-size: 4.5rem; line-height: 1; animation: pop .5s; }
+
+  .book { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .slot {
+    aspect-ratio: 1; border-radius: 14px; background: var(--chip); position: relative;
+    display: grid; place-items: center; font-size: clamp(1.3rem, 6vw, 2rem);
+  }
+  .slot.locked { font: 800 1rem var(--body); color: var(--muted); opacity: .55; }
+  .slot .badge { top: -4px; right: -4px; }
+  .wins { color: var(--muted); font-weight: 700; }
+
+  .confetti { position: fixed; top: -40px; font-size: 26px; pointer-events: none; z-index: 30; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(115vh) rotate(720deg); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  }
+  @media (max-height: 700px) and (max-width: 420px) {
+    .app { gap: 8px; }
+    .owl { font-size: 1.7rem; }
+    .bubble { font-size: .92rem; padding: 8px 12px; }
+    .key { min-height: 50px; }
+    .tool { min-height: 46px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <h1>Sudoku Sprouts</h1>
+    </div>
+    <div class="icons">
+      <button class="icon-btn" id="helpBtn" aria-label="How to play">❓</button>
+      <button class="icon-btn" id="bookBtn" aria-label="My stickers">🏅<span class="badge" id="bookCount">0</span></button>
+      <button class="icon-btn" id="soundBtn" aria-label="Sound on or off">🔊</button>
+    </div>
+  </header>
+
+  <div class="status">
+    <div class="status-left">
+      <span class="chip" id="gameChip"></span>
+      <span class="score" id="score"></span>
+    </div>
+    <button class="btn primary" id="newBtn">New game</button>
+  </div>
+
+  <div class="coach">
+    <div class="owl" aria-hidden="true">🦉</div>
+    <div class="bubble" id="bubble" aria-live="polite"></div>
+  </div>
+
+  <div class="board" id="board" role="grid" aria-label="Sudoku board"></div>
+
+  <div class="tools">
+    <button class="tool" id="undoBtn"><span class="ic">↩️</span>Undo</button>
+    <button class="tool" id="notesBtn" aria-pressed="false"><span class="ic">✏️</span>Notes</button>
+    <button class="tool" id="eraseBtn"><span class="ic">🧽</span>Erase</button>
+    <button class="tool" id="hintBtn"><span class="ic">💡</span><span id="hintLabel">Clue</span></button>
+  </div>
+
+  <div class="pad" id="pad"></div>
+</div>
+
+<!-- New game -->
+<div class="sheet" id="setupSheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+    <h2 id="setupTitle">New game</h2>
+    <h3>How tricky?</h3>
+    <div class="opts" id="levelOpts"></div>
+    <h3>How big?</h3>
+    <div class="opts" id="sizeOpts"></div>
+    <h3>Play with</h3>
+    <div class="opts" id="themeOpts"></div>
+    <div class="row-end">
+      <button class="btn" id="setupCancel">Back</button>
+      <button class="btn primary" id="setupGo">Let's play!</button>
+    </div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="sheet" id="helpSheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <h2 id="helpTitle"></h2>
+    <div id="helpArt"></div>
+    <p id="helpText"></p>
+    <div class="dots" id="helpDots"></div>
+    <div class="row-end">
+      <button class="btn" id="helpBack">Back</button>
+      <button class="btn primary" id="helpNext">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sticker book -->
+<div class="sheet" id="bookSheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="bookTitle">
+    <h2 id="bookTitle">My sticker book</h2>
+    <p id="bookText"></p>
+    <div class="book" id="book"></div>
+    <p class="wins" id="winsText"></p>
+    <div class="row-end"><button class="btn primary" id="bookClose">Close</button></div>
+  </div>
+</div>
+
+<!-- Win -->
+<div class="sheet" id="winSheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <div class="win-top">
+      <h2 id="winTitle">You solved it!</h2>
+      <div class="stars" id="winStars"></div>
+      <p id="winText"></p>
+      <div class="sticker-big" id="winSticker"></div>
+      <p id="stickerText"></p>
+    </div>
+    <div class="row-end">
+      <button class="btn" id="winSame">Play again</button>
+      <button class="btn primary" id="winNext"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+const THEMES = {
+  numbers: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+  animals: ["🐶", "🐱", "🐸", "🐵", "🐷", "🦁", "🐼", "🐰", "🐤"],
+  fruit:   ["🍎", "🍌", "🍇", "🍊", "🍓", "🍉", "🍍", "🍒", "🥝"],
+  colors:  ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "🟤", "⚫", "⚪"],
+};
+const THEME_INFO = {
+  numbers: ["123", "Numbers"], animals: ["🐶", "Animals"], fruit: ["🍎", "Fruit"], colors: ["🔴", "Colors"],
+};
+// box shape [rows, cols] for each board size
+const BOX = { 4: [2, 2], 6: [2, 3], 9: [3, 3] };
+// keep = share of squares already filled in when the game starts
+const LEVELS = {
+  easy:   { name: "Easy",   sizes: [4, 6], keep: { 4: 0.62, 6: 0.6 },  blurb: "4 or 6" },
+  medium: { name: "Medium", sizes: [6, 9], keep: { 6: 0.5, 9: 0.52 },  blurb: "6 or 9" },
+  hard:   { name: "Hard",   sizes: [9],    keep: { 9: 0.4 },           blurb: "9" },
+};
+const SIZE_NAME = { 4: "Little", 6: "Middle", 9: "Big" };
+// the path kids grow through, used to suggest the next challenge
+const LADDER = [["easy", 4], ["easy", 6], ["medium", 6], ["medium", 9], ["hard", 9]];
+const STICKERS = ["🦄", "🐙", "🦖", "🚀", "🌈", "🍦", "🎈", "🐢", "🦋", "🐳", "🌻", "🍩",
+                  "⚽", "🎸", "🦊", "🐝", "🍕", "🏰", "🧸", "🦜", "🌙", "🐧", "🎨", "🏆"];
+const CHEERS = ["Great job!", "You got it!", "Super!", "Nice thinking!", "Yes!", "Awesome!"];
+const GAME_KEY = "sudoku-sprouts-game";
+const PREFS_KEY = "sudoku-sprouts-prefs";
+
+const $ = (id) => document.getElementById(id);
+const rand = (a) => a[Math.floor(Math.random() * a.length)];
+
+function load(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } }
+function store(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) {} }
+
+let prefs = Object.assign({ sound: true, seenHelp: false, stickers: {}, wins: { easy: 0, medium: 0, hard: 0 } }, load(PREFS_KEY) || {});
+let S = null;            // current game
+let selected = null;     // [row, col]
+let notesMode = false;
+let clue = null;         // { r, c, v, kind, unit }
+let history = [];
+let flash = new Set();
+
+/* ---------- puzzle making ---------- */
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function boxIndex(n, r, c) {
+  const [br, bc] = BOX[n];
+  return Math.floor(r / br) * (n / bc) + Math.floor(c / bc);
+}
+
+function fits(g, n, r, c, v) {
+  const [br, bc] = BOX[n];
+  for (let i = 0; i < n; i++) if (g[r][i] === v || g[i][c] === v) return false;
+  const r0 = r - (r % br), c0 = c - (c % bc);
+  for (let i = 0; i < br; i++)
+    for (let j = 0; j < bc; j++)
+      if (g[r0 + i][c0 + j] === v) return false;
+  return true;
+}
+
+const unitCache = {};
+function units(n) {
+  if (unitCache[n]) return unitCache[n];
+  const [br, bc] = BOX[n], list = [];
+  for (let i = 0; i < n; i++) {
+    list.push({ kind: "row", cells: [...Array(n)].map((_, j) => [i, j]) });
+    list.push({ kind: "column", cells: [...Array(n)].map((_, j) => [j, i]) });
+  }
+  for (let b = 0; b < n; b++) {
+    const r0 = Math.floor(b / (n / bc)) * br, c0 = (b % (n / bc)) * bc, cells = [];
+    for (let i = 0; i < br; i++) for (let j = 0; j < bc; j++) cells.push([r0 + i, c0 + j]);
+    list.push({ kind: "box", cells });
+  }
+  return (unitCache[n] = list);
+}
+
+function fillGrid(g, n) {
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      if (g[r][c]) continue;
+      for (const v of shuffle([...Array(n)].map((_, i) => i + 1))) {
+        if (fits(g, n, r, c, v)) {
+          g[r][c] = v;
+          if (fillGrid(g, n)) return true;
+          g[r][c] = 0;
+        }
+      }
+      return false;
+    }
+  }
+  return true;
+}
+
+// Every move a kid needs is either "only one thing fits this square" or
+// "this thing fits only one square in a row/column/box". Puzzles are built so
+// those two ideas are always enough, which keeps the owl's clues explainable.
+function findSingles(g, n) {
+  const out = [];
+  for (let r = 0; r < n; r++)
+    for (let c = 0; c < n; c++) {
+      if (g[r][c]) continue;
+      const cand = [];
+      for (let v = 1; v <= n; v++) if (fits(g, n, r, c, v)) cand.push(v);
+      if (cand.length === 1) out.push({ r, c, v: cand[0], kind: "naked" });
+    }
+  for (const u of units(n))
+    for (let v = 1; v <= n; v++) {
+      if (u.cells.some(([r, c]) => g[r][c] === v)) continue;
+      const spots = u.cells.filter(([r, c]) => !g[r][c] && fits(g, n, r, c, v));
+      if (spots.length === 1) out.push({ r: spots[0][0], c: spots[0][1], v, kind: "hidden", unit: u });
+    }
+  return out;
+}
+
+function solvableBySingles(p, n) {
+  const g = p.map((row) => row.slice());
+  let progress = true;
+  while (progress) {
+    progress = false;
+    for (let r = 0; r < n; r++)
+      for (let c = 0; c < n; c++) {
+        if (g[r][c]) continue;
+        let only = 0, count = 0;
+        for (let v = 1; v <= n && count < 2; v++) if (fits(g, n, r, c, v)) { count++; only = v; }
+        if (count === 0) return false;
+        if (count === 1) { g[r][c] = only; progress = true; }
+      }
+    if (progress) continue;
+    for (const u of units(n))
+      for (let v = 1; v <= n; v++) {
+        if (u.cells.some(([r, c]) => g[r][c] === v)) continue;
+        const spots = u.cells.filter(([r, c]) => !g[r][c] && fits(g, n, r, c, v));
+        if (spots.length === 1) { g[spots[0][0]][spots[0][1]] = v; progress = true; }
+      }
+  }
+  return g.every((row) => row.every(Boolean));
+}
+
+function makePuzzle(n, level) {
+  const full = [...Array(n)].map(() => Array(n).fill(0));
+  fillGrid(full, n);
+  const p = full.map((row) => row.slice());
+  const target = Math.round(n * n * LEVELS[level].keep[n]);
+  let left = n * n;
+  for (const k of shuffle([...Array(n * n).keys()])) {
+    if (left <= target) break;
+    const r = Math.floor(k / n), c = k % n, keep = p[r][c];
+    p[r][c] = 0;
+    if (solvableBySingles(p, n)) left--;
+    else p[r][c] = keep;
+  }
+  return { solution: full, puzzle: p };
+}
+
+/* ---------- sound ---------- */
+
+let actx = null;
+function tone(freq, dur, when = 0, type = "sine", vol = 0.12) {
+  if (!prefs.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+    const t = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  } catch (e) {}
+}
+const sfx = {
+  tap:  () => tone(520, 0.05, 0, "sine", 0.04),
+  good: () => { tone(660, 0.12); tone(880, 0.16, 0.08); },
+  oops: () => tone(196, 0.2, 0, "triangle", 0.12),
+  clue: () => tone(740, 0.14, 0, "triangle", 0.1),
+  unit: () => [523, 659, 784].forEach((f, i) => tone(f, 0.2, i * 0.08)),
+  win:  () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, 0.24, i * 0.13)),
+};
+
+/* ---------- game state ---------- */
+
+const sym = (v) => THEMES[S.theme][v - 1];
+
+function say(text) {
+  const b = $("bubble");
+  b.textContent = text;
+  b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump");
+}
+
+function save() { store(GAME_KEY, S); }
+
+function startTip() {
+  if (S.level === "easy") return "Tap a square, then tap what goes in it. Every row, column and colored box needs each one just once.";
+  if (S.level === "medium") return "Try the ✏️ Notes pencil to write little guesses in a square.";
+  return "Look for a square where only one thing can fit. Tap 💡 Clue if you get stuck.";
+}
+
+function newGame(level, size, theme) {
+  const { solution, puzzle } = makePuzzle(size, level);
+  S = {
+    level, size, theme, solution, puzzle,
+    grid: puzzle.map((r) => r.slice()),
+    notes: [...Array(size * size)].map(() => []),
+    oops: 0, hints: 0, done: false,
+  };
+  selected = null; clue = null; history = []; notesMode = false; flash.clear();
+  say(startTip());
+  save();
+  render();
+}
+
+function validGame(g) {
+  return g && BOX[g.size] && LEVELS[g.level] && THEMES[g.theme] && !g.done &&
+    Array.isArray(g.grid) && g.grid.length === g.size && Array.isArray(g.notes) && g.notes.length === g.size * g.size;
+}
+
+/* ---------- drawing ---------- */
+
+function peersOf(n, r, c) {
+  const set = new Set(), b = boxIndex(n, r, c);
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < n; j++)
+      if (i === r || j === c || boxIndex(n, i, j) === b) set.add(i * n + j);
+  return set;
+}
+
+function cellEl(r, c) { return $("board").children[r * S.size + c]; }
+
+function render() {
+  const n = S.size, [br, bc] = BOX[n], board = $("board");
+  board.style.setProperty("--n", n);
+  board.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+  board.style.gridTemplateRows = `repeat(${n}, 1fr)`;
+  board.classList.toggle("emoji", S.theme !== "numbers");
+
+  const selVal = selected ? S.grid[selected[0]][selected[1]] : 0;
+  const peers = selected ? peersOf(n, selected[0], selected[1]) : null;
+  const focus = clue && clue.kind === "hidden" ? new Set(clue.unit.cells.map(([r, c]) => r * n + c)) : null;
+
+  board.textContent = "";
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      const i = r * n + c, v = S.grid[r][c];
+      const d = document.createElement("button");
+      d.type = "button";
+      d.className = "cell";
+      d.style.setProperty("--bx", `var(--b${boxIndex(n, r, c) + 1})`);
+      if ((c + 1) % bc === 0) d.classList.add("br");
+      if ((r + 1) % br === 0) d.classList.add("bb");
+      if (c === n - 1) d.classList.add("lc");
+      if (r === n - 1) d.classList.add("lr");
+      if (S.puzzle[r][c]) d.classList.add("given");
+      else if (v) d.classList.add("kid");
+      if (focus && focus.has(i)) d.classList.add("focus");
+      if (peers && peers.has(i)) d.classList.add("peer");
+      if (selVal && v === selVal) d.classList.add("same");
+      if (selected && selected[0] === r && selected[1] === c) d.classList.add("sel");
+      if (clue && clue.kind === "naked" && clue.r === r && clue.c === c) d.classList.add("glow");
+      if (flash.has(i)) d.classList.add("cheer");
+      if (v) {
+        d.textContent = sym(v);
+      } else if (S.notes[i].length) {
+        const box = document.createElement("span");
+        box.className = "notes";
+        box.style.gridTemplateColumns = `repeat(${bc}, 1fr)`;
+        for (let k = 1; k <= n; k++) {
+          const s = document.createElement("span");
+          s.textContent = S.notes[i].includes(k) ? sym(k) : "";
+          box.appendChild(s);
+        }
+        d.appendChild(box);
+      }
+      d.setAttribute("aria-label", `Row ${r + 1}, column ${c + 1}: ${v ? sym(v) : "empty"}`);
+      d.addEventListener("click", () => select(r, c));
+      board.appendChild(d);
+    }
+  }
+
+  const pad = $("pad");
+  pad.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+  pad.classList.toggle("nine", n === 9);
+  pad.classList.toggle("notes-on", notesMode);
+  pad.textContent = "";
+  const flat = S.grid.flat();
+  for (let v = 1; v <= n; v++) {
+    const left = n - flat.filter((x) => x === v).length;
+    const b = document.createElement("button");
+    b.className = "key" + (left === 0 ? " done" : "");
+    b.innerHTML = `<span></span><small>${left === 0 ? "✓" : left + " left"}</small>`;
+    b.firstChild.textContent = sym(v);
+    b.setAttribute("aria-label", `${sym(v)}, ${left} left`);
+    b.addEventListener("click", () => place(v));
+    pad.appendChild(b);
+  }
+
+  $("gameChip").textContent = `${LEVELS[S.level].name} · ${n}×${n} · ${THEME_INFO[S.theme][0]}`;
+  $("score").textContent = `Oops ${S.oops} · Clues ${S.hints}`;
+  $("undoBtn").disabled = history.length === 0;
+  $("notesBtn").setAttribute("aria-pressed", String(notesMode));
+  $("hintLabel").textContent = clue ? "Show me" : "Clue";
+  $("soundBtn").textContent = prefs.sound ? "🔊" : "🔇";
+  $("bookCount").textContent = Object.keys(prefs.stickers).length;
+}
+
+/* ---------- playing ---------- */
+
+function select(r, c) {
+  selected = [r, c];
+  sfx.tap();
+  render();
+}
+
+// remember cells before changing them so Undo can put them back
+function record(indices) {
+  const n = S.size;
+  history.push(indices.map((i) => ({ i, v: S.grid[Math.floor(i / n)][i % n], notes: S.notes[i].slice() })));
+  if (history.length > 200) history.shift();
+}
+
+function commit(r, c, v) {
+  const n = S.size, peers = [...peersOf(n, r, c)];
+  record(peers);
+  S.grid[r][c] = v;
+  S.notes[r * n + c] = [];
+  for (const i of peers) S.notes[i] = S.notes[i].filter((x) => x !== v);
+}
+
+function conflictFor(r, c, v) {
+  const n = S.size;
+  for (let j = 0; j < n; j++) if (S.grid[r][j] === v) return { kind: "row", r, c: j };
+  for (let i = 0; i < n; i++) if (S.grid[i][c] === v) return { kind: "column", r: i, c };
+  const b = boxIndex(n, r, c);
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < n; j++)
+      if (boxIndex(n, i, j) === b && S.grid[i][j] === v) return { kind: "box", r: i, c: j };
+  return null;
+}
+
+function place(v) {
+  if (!S || S.done) return;
+  if (!selected) { say("First tap an empty square on the board."); return; }
+  const [r, c] = selected, n = S.size;
+  if (S.puzzle[r][c]) { say("That one was there from the start. Pick an empty square!"); return; }
+
+  if (notesMode) {
+    if (S.grid[r][c]) return;
+    const i = r * n + c;
+    record([i]);
+    S.notes[i] = S.notes[i].includes(v) ? S.notes[i].filter((x) => x !== v) : [...S.notes[i], v].sort();
+    sfx.tap(); save(); render();
+    return;
+  }
+  if (S.grid[r][c] === v) return;
+
+  if (S.solution[r][c] !== v) {
+    S.oops++;
+    const why = conflictFor(r, c, v);
+    say(why
+      ? `Oops! There's already a ${sym(v)} in this ${why.kind}. Each one can only be there once.`
+      : `Hmm, ${sym(v)} doesn't go here. Try a different one!`);
+    sfx.oops(); save(); render();
+    const el = cellEl(r, c);
+    el.textContent = sym(v);
+    el.classList.add("wrong");
+    if (why) cellEl(why.r, why.c).classList.add("conflict");
+    setTimeout(() => { if (!S.grid[r][c]) render(); }, 750);
+    return;
+  }
+
+  commit(r, c, v);
+  afterCorrect(r, c, false);
+}
+
+function afterCorrect(r, c, fromClue) {
+  const n = S.size;
+  let message = null;
+  if (clue && S.grid[clue.r][clue.c]) {
+    if (!fromClue) message = "You found it! 🎉";
+    clue = null;
+  }
+  const done = units(n).filter((u) =>
+    u.cells.some(([a, b]) => a === r && b === c) && u.cells.every(([a, b]) => S.grid[a][b]));
+  done.forEach((u) => u.cells.forEach(([a, b]) => flash.add(a * n + b)));
+  if (done.length && !message) message = `${rand(CHEERS)} You finished a ${done[0].kind}!`;
+  if (message) say(message);
+  else if (!fromClue && Math.random() < 0.3) say(rand(CHEERS));
+
+  done.length ? sfx.unit() : sfx.good();
+  save();
+  render();
+  cellEl(r, c).classList.add("pop");
+  if (flash.size) setTimeout(() => { flash.clear(); render(); }, 900);
+  checkWin();
+}
+
+function erase() {
+  if (!selected || !S || S.done) return;
+  const [r, c] = selected, n = S.size, i = r * n + c;
+  if (S.puzzle[r][c]) { say("That one was there from the start, so it stays."); return; }
+  if (!S.grid[r][c] && !S.notes[i].length) return;
+  record([i]);
+  S.grid[r][c] = 0;
+  S.notes[i] = [];
+  save(); render();
+}
+
+function undo() {
+  const step = history.pop();
+  if (!step) return;
+  const n = S.size;
+  for (const { i, v, notes } of step) {
+    S.grid[Math.floor(i / n)][i % n] = v;
+    S.notes[i] = notes;
+  }
+  clue = null;
+  save(); render();
+}
+
+function pickClue() {
+  const n = S.size, singles = findSingles(S.grid, n);
+  if (selected && !S.grid[selected[0]][selected[1]]) {
+    const [sr, sc] = selected;
+    const mine = singles.filter((s) => s.r === sr && s.c === sc);
+    if (mine.length) return mine.find((s) => s.kind === "naked") || mine[0];
+  }
+  const naked = singles.filter((s) => s.kind === "naked");
+  if (naked.length) return rand(naked);
+  if (singles.length) return rand(singles);
+  const empty = [];
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (!S.grid[r][c]) empty.push([r, c]);
+  if (!empty.length) return null;
+  const [r, c] = rand(empty);
+  return { r, c, v: S.solution[r][c], kind: "reveal" };
+}
+
+function hint() {
+  if (!S || S.done) return;
+  if (clue && !S.grid[clue.r][clue.c]) { reveal(clue); return; }
+  const c = pickClue();
+  if (!c) return;
+  if (c.kind === "reveal") { reveal(c); return; }
+  clue = c;
+  if (c.kind === "naked") {
+    selected = [c.r, c.c];
+    say("Look at the glowing square. Check its row, its column and its box. What's missing from all three?");
+  } else {
+    selected = null;
+    say(`This ${c.unit.kind} still needs a ${sym(c.v)}. Only one empty square here can take it. Can you find it?`);
+  }
+  sfx.clue();
+  render();
+}
+
+function reveal(c) {
+  const n = S.size;
+  if (c.kind === "naked") {
+    const seen = new Set();
+    for (const i of peersOf(n, c.r, c.c)) {
+      const v = S.grid[Math.floor(i / n)][i % n];
+      if (v) seen.add(v);
+    }
+    const list = [...seen].sort((a, b) => a - b).map(sym).join(" ");
+    say(`Its row, column and box already have ${list}. So the only one left is ${sym(c.v)}!`);
+  } else if (c.kind === "hidden") {
+    say(`${sym(c.v)} can't go in the other empty squares of this ${c.unit.kind}, because their row, column or box already has one. So it goes here!`);
+  } else {
+    say(`Here's one to help: ${sym(c.v)} goes here.`);
+  }
+  S.hints++;
+  commit(c.r, c.c, c.v);
+  selected = [c.r, c.c];
+  clue = null;
+  afterCorrect(c.r, c.c, true);
+}
+
+/* ---------- winning & stickers ---------- */
+
+function checkWin() {
+  const n = S.size;
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (S.grid[r][c] !== S.solution[r][c]) return;
+  S.done = true;
+  save();
+  const slips = S.oops + S.hints;
+  const stars = slips === 0 ? 3 : slips <= 3 ? 2 : 1;
+
+  const missing = STICKERS.filter((s) => !prefs.stickers[s]);
+  const sticker = rand(missing.length ? missing : STICKERS);
+  const isNew = !prefs.stickers[sticker];
+  prefs.stickers[sticker] = (prefs.stickers[sticker] || 0) + 1;
+  prefs.wins[S.level] = (prefs.wins[S.level] || 0) + 1;
+  store(PREFS_KEY, prefs);
+
+  $("winStars").textContent = "⭐".repeat(stars) + "☆".repeat(3 - stars);
+  $("winText").textContent = stars === 3 ? "Perfect! No oopses and no clues." : stars === 2 ? "Really good thinking!" : "You kept going and finished. Well done!";
+  $("winSticker").textContent = sticker;
+  $("stickerText").textContent = isNew ? "A new sticker for your book!" : "Another one for your collection!";
+
+  const at = LADDER.findIndex(([l, s]) => l === S.level && s === S.size);
+  const next = stars >= 2 && at < LADDER.length - 1 ? LADDER[at + 1] : null;
+  const btn = $("winNext");
+  if (next) {
+    btn.textContent = `Try ${LEVELS[next[0]].name} ${next[1]}×${next[1]}`;
+    btn.onclick = () => { closeSheets(); newGame(next[0], next[1], S.theme); };
+  } else {
+    btn.textContent = "Choose a game";
+    btn.onclick = () => openSetup();
+  }
+
+  say("You did it! 🎉");
+  setTimeout(() => {
+    sfx.win();
+    openSheet("winSheet");
+    confetti();
+  }, 600);
+}
+
+function confetti() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const bits = ["🎉", "⭐", "🎈", "✨", "🌈", "💛"];
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement("div");
+    s.className = "confetti";
+    s.textContent = bits[i % bits.length];
+    s.style.left = Math.random() * 100 + "vw";
+    s.style.animationDuration = 2 + Math.random() * 2 + "s";
+    s.style.animationDelay = Math.random() * 0.8 + "s";
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 5000);
+  }
+}
+
+function renderBook() {
+  const owned = Object.keys(prefs.stickers).length;
+  $("bookText").textContent = owned
+    ? `You have ${owned} of ${STICKERS.length} stickers. Solve puzzles to find the rest!`
+    : "Solve a puzzle to get your first sticker!";
+  const book = $("book");
+  book.textContent = "";
+  for (const s of STICKERS) {
+    const d = document.createElement("div"), n = prefs.stickers[s] || 0;
+    d.className = "slot" + (n ? "" : " locked");
+    d.textContent = n ? s : "?";
+    if (n > 1) {
+      const b = document.createElement("span");
+      b.className = "badge";
+      b.textContent = "×" + n;
+      d.appendChild(b);
+    }
+    book.appendChild(d);
+  }
+  const w = prefs.wins;
+  $("winsText").textContent = `Puzzles solved: Easy ${w.easy || 0} · Medium ${w.medium || 0} · Hard ${w.hard || 0}`;
+}
+
+/* ---------- sheets ---------- */
+
+function openSheet(id) {
+  document.querySelectorAll(".sheet").forEach((s) => (s.hidden = s.id !== id));
+}
+function closeSheets() {
+  document.querySelectorAll(".sheet").forEach((s) => (s.hidden = true));
+}
+document.querySelectorAll(".sheet").forEach((s) =>
+  s.addEventListener("click", (e) => { if (e.target === s && s.id !== "winSheet") closeSheets(); }));
+
+let setup = { level: "easy", size: 4, theme: "numbers" };
+
+function optButton(on, big, small, onClick) {
+  const b = document.createElement("button");
+  b.className = "opt" + (on ? " on" : "");
+  b.innerHTML = "<b></b><span></span>";
+  b.children[0].textContent = big;
+  b.children[1].textContent = small;
+  b.setAttribute("aria-pressed", String(on));
+  b.addEventListener("click", () => { onClick(); sfx.tap(); renderSetup(); });
+  return b;
+}
+
+function renderSetup() {
+  const sizes = LEVELS[setup.level].sizes;
+  if (!sizes.includes(setup.size)) setup.size = sizes[0];
+  const lv = $("levelOpts"), sz = $("sizeOpts"), th = $("themeOpts");
+  lv.textContent = sz.textContent = th.textContent = "";
+  for (const [key, L] of Object.entries(LEVELS))
+    lv.appendChild(optButton(setup.level === key, L.name, L.blurb + " to fill", () => (setup.level = key)));
+  for (const s of sizes)
+    sz.appendChild(optButton(setup.size === s, `${s}×${s}`, SIZE_NAME[s], () => (setup.size = s)));
+  for (const [key, [icon, label]] of Object.entries(THEME_INFO))
+    th.appendChild(optButton(setup.theme === key, icon, label, () => (setup.theme = key)));
+}
+
+function openSetup() {
+  setup = { level: S.level, size: S.size, theme: S.theme };
+  renderSetup();
+  openSheet("setupSheet");
+}
+
+/* ---------- how to play ---------- */
+
+const EXAMPLE = [[1, 2, 3, 4], [3, 4, 1, 2], [2, 1, 4, 3], [4, 3, 2, 1]];
+const HELP = [
+  { title: "Welcome to Sudoku!", text: "Sudoku is a puzzle. You fill every empty square so that nothing is ever repeated. Here is a finished little board.", hl: () => false },
+  { title: "Rows", text: "A row goes across. Every row has each one exactly once.", hl: (r) => r === 0 },
+  { title: "Columns", text: "A column goes up and down. Every column has each one exactly once too.", hl: (r, c) => c === 1 },
+  { title: "Boxes", text: "Each colored box also has each one exactly once.", hl: (r, c) => r >= 2 && c >= 2 },
+  { title: "Find the missing one", blank: [0, 2], hl: (r) => r === 0 },
+  { title: "Stuck? Ask the owl!", owl: true, text: "Tap 💡 Clue and the owl shows you where to look. Tap it again if you want to see the answer. Use ✏️ Notes to write small guesses." },
+];
+let helpStep = 0;
+
+function miniBoard(step) {
+  const syms = THEMES[S ? S.theme : "numbers"], wrap = document.createElement("div");
+  wrap.className = "mini" + (S && S.theme !== "numbers" ? " emoji" : "");
+  wrap.style.setProperty("--n", 4);
+  for (let r = 0; r < 4; r++)
+    for (let c = 0; c < 4; c++) {
+      const d = document.createElement("div");
+      d.className = "cell given";
+      d.style.setProperty("--bx", `var(--b${boxIndex(4, r, c) + 1})`);
+      if (c % 2 === 1) d.classList.add("br");
+      if (r % 2 === 1) d.classList.add("bb");
+      if (c === 3) d.classList.add("lc");
+      if (r === 3) d.classList.add("lr");
+      if (step.hl(r, c)) d.classList.add("focus");
+      const isBlank = step.blank && step.blank[0] === r && step.blank[1] === c;
+      d.textContent = isBlank ? "?" : syms[EXAMPLE[r][c] - 1];
+      if (isBlank) d.classList.add("glow");
+      wrap.appendChild(d);
+    }
+  return wrap;
+}
+
+function renderHelp() {
+  const step = HELP[helpStep], syms = THEMES[S ? S.theme : "numbers"];
+  $("helpTitle").textContent = step.title;
+  const art = $("helpArt");
+  art.textContent = "";
+  if (step.owl) {
+    const o = document.createElement("div");
+    o.className = "big-owl";
+    o.textContent = "🦉";
+    art.appendChild(o);
+  } else {
+    art.appendChild(miniBoard(step));
+  }
+  $("helpText").textContent = step.text ||
+    `This row has ${syms[0]}, ${syms[1]} and ${syms[3]}. Which one is missing? It must be ${syms[2]}! That's how you solve every square.`;
+  $("helpDots").innerHTML = HELP.map((_, i) => `<i class="${i === helpStep ? "on" : ""}"></i>`).join("");
+  $("helpBack").hidden = helpStep === 0;
+  $("helpNext").textContent = helpStep === HELP.length - 1 ? "Let's play!" : "Next";
+}
+
+function openHelp() {
+  helpStep = 0;
+  renderHelp();
+  openSheet("helpSheet");
+}
+
+/* ---------- wiring ---------- */
+
+$("newBtn").addEventListener("click", openSetup);
+$("setupCancel").addEventListener("click", closeSheets);
+$("setupGo").addEventListener("click", () => { closeSheets(); newGame(setup.level, setup.size, setup.theme); });
+$("hintBtn").addEventListener("click", hint);
+$("eraseBtn").addEventListener("click", erase);
+$("undoBtn").addEventListener("click", undo);
+$("notesBtn").addEventListener("click", () => {
+  notesMode = !notesMode;
+  say(notesMode ? "Notes are on. Tap to write small guesses. Tap ✏️ again to turn them off." : "Notes are off.");
+  render();
+});
+$("soundBtn").addEventListener("click", () => {
+  prefs.sound = !prefs.sound;
+  store(PREFS_KEY, prefs);
+  sfx.tap();
+  render();
+});
+$("helpBtn").addEventListener("click", openHelp);
+$("helpBack").addEventListener("click", () => { helpStep = Math.max(0, helpStep - 1); renderHelp(); });
+$("helpNext").addEventListener("click", () => {
+  if (helpStep < HELP.length - 1) { helpStep++; renderHelp(); return; }
+  prefs.seenHelp = true;
+  store(PREFS_KEY, prefs);
+  closeSheets();
+});
+$("bookBtn").addEventListener("click", () => { renderBook(); openSheet("bookSheet"); });
+$("bookClose").addEventListener("click", closeSheets);
+$("winSame").addEventListener("click", () => { closeSheets(); newGame(S.level, S.size, S.theme); });
+
+document.addEventListener("keydown", (e) => {
+  if (!S || document.querySelector(".sheet:not([hidden])")) return;
+  const n = S.size;
+  if (e.key >= "1" && e.key <= String(n)) place(Number(e.key));
+  else if (e.key === "Backspace" || e.key === "Delete") erase();
+  else if (e.key === "n") $("notesBtn").click();
+  else if (e.key.startsWith("Arrow")) {
+    let [r, c] = selected || [0, 0];
+    if (e.key === "ArrowUp") r = (r + n - 1) % n;
+    if (e.key === "ArrowDown") r = (r + 1) % n;
+    if (e.key === "ArrowLeft") c = (c + n - 1) % n;
+    if (e.key === "ArrowRight") c = (c + 1) % n;
+    selected = [r, c];
+    render();
+    e.preventDefault();
+  }
+});
+
+const saved = load(GAME_KEY);
+if (validGame(saved)) {
+  S = saved;
+  say("Welcome back! Let's finish this puzzle.");
+  render();
+} else {
+  newGame("easy", 4, "numbers");
+}
+if (!prefs.seenHelp) openHelp();
+</script>
+</body>
+</html>
