@@ -38,6 +38,7 @@
     --glow: rgba(255, 176, 32, .75);
     --scrim: rgba(16, 24, 40, .45);
     --key-shadow: #c3d4e6;
+    --gold: #e0a800;
     --b1: #fde0e3; --b2: #dff0c6; --b3: #d8e7fd; --b4: #fff0bd; --b5: #e8dcff;
     --b6: #ffdcc4; --b7: #cff3ec; --b8: #f9d8ef; --b9: #e4e8f0;
     --display: "Fredoka", "Rubik", ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
@@ -68,6 +69,7 @@
       --glow: rgba(255, 190, 70, .55);
       --scrim: rgba(0, 0, 0, .6);
       --key-shadow: #0b101c;
+      --gold: #ffcf4a;
       --b1: #4a2a31; --b2: #31432a; --b3: #213451; --b4: #4a4020; --b5: #382d57;
       --b6: #4d3322; --b7: #1d4541; --b8: #4a2844; --b9: #313949;
       color-scheme: dark;
@@ -248,6 +250,9 @@
   .opt span { font-size: .78rem; font-weight: 700; color: var(--muted); }
   .opt.on { border-color: var(--kid); background: var(--surface-2); }
   #themeOpts { grid-template-columns: repeat(2, 1fr); }
+  #levelOpts { grid-template-columns: repeat(4, 1fr); }
+  #levelOpts .opt { min-width: 0; padding-inline: 2px; }
+  #levelOpts .opt b { font-size: 1.1rem; }
 
   .mini {
     display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr);
@@ -271,6 +276,7 @@
   }
   .slot.locked { font: 800 1rem var(--body); color: var(--muted); opacity: .55; }
   .slot .badge { top: -4px; right: -4px; }
+  .slot.gold { box-shadow: inset 0 0 0 3px var(--gold); opacity: 1; }
   .wins { color: var(--muted); font-weight: 700; }
 
   .confetti { position: fixed; top: -40px; font-size: 26px; pointer-events: none; z-index: 30; animation: fall linear forwards; }
@@ -401,6 +407,7 @@ const LEVELS = {
   easy:   { name: "קל",     sizes: [4, 6], keep: { 4: 0.62, 6: 0.6 },  blurb: "4 או 6" },
   medium: { name: "בינוני", sizes: [6, 9], keep: { 6: 0.5, 9: 0.52 },  blurb: "6 או 9" },
   hard:   { name: "קשה",    sizes: [9],    keep: { 9: 0.4 },           blurb: "9" },
+  expert: { name: "אלופים", sizes: [9],    keep: { 9: 0.31 },          blurb: "9 🔥" },
 };
 const SIZE_NAME = { 4: "קטן", 6: "אמצעי", 9: "גדול" };
 // Hebrew needs different words around row (f.), column (f.) and box (m.)
@@ -410,7 +417,9 @@ const UNIT_TEXT = {
   box:    { inThis: "בריבוע הזה",  done: "סיימתם ריבוע!" },
 };
 // the path kids grow through, used to suggest the next challenge
-const LADDER = [["easy", 4], ["easy", 6], ["medium", 6], ["medium", 9], ["hard", 9]];
+const LADDER = [["easy", 4], ["easy", 6], ["medium", 6], ["medium", 9], ["hard", 9], ["expert", 9]];
+// rare gold stickers, won only on the top level with at least 2 stars
+const GOLD_STICKERS = ["👑", "🐉", "💎", "🦅", "🧙", "🌟"];
 const STICKERS = ["🦄", "🐙", "🦖", "🚀", "🌈", "🍦", "🎈", "🐢", "🦋", "🐳", "🌻", "🍩",
                   "⚽", "🎸", "🦊", "🐝", "🍕", "🏰", "🧸", "🦜", "🌙", "🐧", "🎨", "🏆"];
 const CHEERS = ["כל הכבוד!", "מעולה!", "יופי!", "חשיבה טובה!", "כן!", "מדהים!"];
@@ -534,7 +543,99 @@ function solvableBySingles(p, n) {
   return g.every((row) => row.every(Boolean));
 }
 
+// Harder logic for the top level: tracks the possible values of every square and
+// also uses locked candidates and naked pairs. Still never needs a guess.
+function solvableWithPairs(p, n) {
+  const g = p.map((row) => row.slice()), U = units(n), [br, bc] = BOX[n];
+  const bit = (v) => 1 << (v - 1);
+  const count = (m) => { let k = 0; while (m) { m &= m - 1; k++; } return k; };
+  const cand = g.map((row, r) => row.map((x, c) => {
+    if (x) return 0;
+    let m = 0;
+    for (let v = 1; v <= n; v++) if (fits(g, n, r, c, v)) m |= bit(v);
+    return m;
+  }));
+  const setCell = (r, c, v) => {
+    g[r][c] = v;
+    cand[r][c] = 0;
+    const r0 = r - (r % br), c0 = c - (c % bc);
+    for (let i = 0; i < n; i++) { cand[r][i] &= ~bit(v); cand[i][c] &= ~bit(v); }
+    for (let i = 0; i < br; i++) for (let j = 0; j < bc; j++) cand[r0 + i][c0 + j] &= ~bit(v);
+  };
+  const singlesPass = () => {
+    let changed = false;
+    for (let r = 0; r < n; r++)
+      for (let c = 0; c < n; c++)
+        if (!g[r][c] && count(cand[r][c]) === 1) { setCell(r, c, Math.log2(cand[r][c]) + 1); changed = true; }
+    if (changed) return true;
+    for (const u of U)
+      for (let v = 1; v <= n; v++) {
+        const spots = u.cells.filter(([r, c]) => cand[r][c] & bit(v));
+        if (spots.length === 1) { setCell(spots[0][0], spots[0][1], v); return true; }
+      }
+    return false;
+  };
+  const lockedPass = () => {
+    let changed = false;
+    for (const u of U)
+      for (let v = 1; v <= n; v++) {
+        const spots = u.cells.filter(([r, c]) => cand[r][c] & bit(v));
+        if (spots.length < 2 || spots.length > 3) continue;
+        for (const w of U) {
+          if (w === u || !spots.every(([a, b]) => w.cells.some(([r, c]) => r === a && c === b))) continue;
+          for (const [r, c] of w.cells)
+            if (cand[r][c] & bit(v) && !spots.some(([a, b]) => a === r && b === c)) { cand[r][c] &= ~bit(v); changed = true; }
+        }
+      }
+    return changed;
+  };
+  const pairsPass = () => {
+    let changed = false;
+    for (const u of U) {
+      const twos = u.cells.filter(([r, c]) => count(cand[r][c]) === 2);
+      for (let i = 0; i < twos.length; i++)
+        for (let j = i + 1; j < twos.length; j++) {
+          const m = cand[twos[i][0]][twos[i][1]];
+          if (m !== cand[twos[j][0]][twos[j][1]]) continue;
+          for (const [r, c] of u.cells) {
+            if (cand[r][c] === m || !(cand[r][c] & m)) continue;
+            cand[r][c] &= ~m;
+            changed = true;
+          }
+        }
+    }
+    return changed;
+  };
+  while (singlesPass() || lockedPass() || pairsPass()) {}
+  return g.every((row) => row.every(Boolean));
+}
+
+// Keeps only puzzles plain "one choice left" thinking cannot finish, so notes become essential.
+function makeChampionPuzzle(n, target) {
+  const deadline = Date.now() + 1500;
+  let best = null;
+  do {
+    const full = [...Array(n)].map(() => Array(n).fill(0));
+    fillGrid(full, n);
+    const p = full.map((row) => row.slice());
+    let left = n * n;
+    for (const k of shuffle([...Array(n * n).keys()])) {
+      if (left <= target) break;
+      const r = Math.floor(k / n), c = k % n, keep = p[r][c];
+      p[r][c] = 0;
+      if (solvableWithPairs(p, n)) left--;
+      else p[r][c] = keep;
+    }
+    const tough = !solvableBySingles(p, n);
+    if (!best || (tough && !best.tough) || (tough === best.tough && left < best.left))
+      best = { solution: full, puzzle: p, left, tough };
+    if (tough && left <= target + 1) break;
+  } while (Date.now() < deadline);
+  return { solution: best.solution, puzzle: best.puzzle };
+}
+
 function makePuzzle(n, level) {
+  if (level === "expert") return makeChampionPuzzle(n, Math.round(n * n * LEVELS[level].keep[n]));
   const full = [...Array(n)].map(() => Array(n).fill(0));
   fillGrid(full, n);
   const p = full.map((row) => row.slice());
@@ -590,7 +691,8 @@ function save() { store(GAME_KEY, S); }
 function startTip() {
   if (S.level === "easy") return "לחצו על משבצת, ואז על מה שנכנס בה. בכל שורה, עמודה וריבוע צבעוני כל אחד מופיע רק פעם אחת.";
   if (S.level === "medium") return "נסו את עיפרון ✏️ ההערות כדי לכתוב ניחושים קטנים במשבצת.";
-  return "חפשו משבצת שרק דבר אחד מתאים לה. נתקעתם? לחצו על 💡 רמז.";
+  if (S.level === "hard") return "חפשו משבצת שרק דבר אחד מתאים לה. נתקעתם? לחצו על 💡 רמז.";
+  return "רמת האלופים! 🔥 לפעמים לא תהיה אף משבצת ברורה. כתבו ✏️ הערות וחשבו כמה צעדים קדימה. לזכייה במדבקת זהב צריך לפחות 2 כוכבים.";
 }
 
 function newGame(level, size, theme) {
@@ -827,7 +929,10 @@ function pickClue() {
   const empty = [];
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (!S.grid[r][c]) empty.push([r, c]);
   if (!empty.length) return null;
-  const [r, c] = rand(empty);
+  const options = ([r, c]) => [...Array(n).keys()].filter((v) => fits(S.grid, n, r, c, v + 1)).length;
+  const [r, c] = selected && !S.grid[selected[0]][selected[1]]
+    ? selected
+    : empty.reduce((a, b) => (options(b) < options(a) ? b : a));
   return { r, c, v: S.solution[r][c], kind: "reveal" };
 }
 
@@ -862,7 +967,7 @@ function reveal(c) {
   } else if (c.kind === "hidden") {
     say(`${sym(c.v)} לא יכול להיכנס לשאר המשבצות הריקות ${UNIT_TEXT[c.unit.kind].inThis}, כי בשורה, בעמודה או בריבוע שלהן כבר יש אחד כזה. אז הוא נכנס כאן!`);
   } else {
-    say(`הנה עזרה קטנה: ${sym(c.v)} נכנס כאן.`);
+    say(`כרגע אין משבצת ברורה, אז הינשוף גילה לכם אחת: ${sym(c.v)} נכנס כאן.`);
   }
   S.hints++;
   commit(c.r, c.c, c.v);
@@ -881,8 +986,10 @@ function checkWin() {
   const slips = S.oops + S.hints;
   const stars = slips === 0 ? 3 : slips <= 3 ? 2 : 1;
 
-  const missing = STICKERS.filter((s) => !prefs.stickers[s]);
-  const sticker = rand(missing.length ? missing : STICKERS);
+  const gold = S.level === "expert" && stars >= 2;
+  const pool = gold ? GOLD_STICKERS : STICKERS;
+  const missing = pool.filter((s) => !prefs.stickers[s]);
+  const sticker = rand(missing.length ? missing : pool);
   const isNew = !prefs.stickers[sticker];
   prefs.stickers[sticker] = (prefs.stickers[sticker] || 0) + 1;
   prefs.wins[S.level] = (prefs.wins[S.level] || 0) + 1;
@@ -891,7 +998,7 @@ function checkWin() {
   $("winStars").textContent = "⭐".repeat(stars) + "☆".repeat(3 - stars);
   $("winText").textContent = stars === 3 ? "מושלם! בלי טעויות ובלי רמזים." : stars === 2 ? "חשיבה ממש טובה!" : "התמדתם וסיימתם. כל הכבוד!";
   $("winSticker").textContent = sticker;
-  $("stickerText").textContent = isNew ? "מדבקה חדשה לאלבום!" : "עוד אחת לאוסף!";
+  $("stickerText").textContent = gold ? "מדבקת זהב נדירה של אלופים!" : isNew ? "מדבקה חדשה לאלבום!" : "עוד אחת לאוסף!";
 
   const at = LADDER.findIndex(([l, s]) => l === S.level && s === S.size);
   const next = stars >= 2 && at < LADDER.length - 1 ? LADDER[at + 1] : null;
@@ -930,13 +1037,13 @@ function confetti() {
 function renderBook() {
   const owned = Object.keys(prefs.stickers).length;
   $("bookText").textContent = owned
-    ? `יש לכם ${owned} מתוך ${STICKERS.length} מדבקות. פתרו עוד פאזלים כדי למצוא את השאר!`
+    ? `יש לכם ${owned} מתוך ${STICKERS.length + GOLD_STICKERS.length} מדבקות. את מדבקות הזהב מקבלים רק ברמת אלופים, עם לפחות 2 כוכבים!`
     : "פתרו פאזל כדי לקבל את המדבקה הראשונה!";
   const book = $("book");
   book.textContent = "";
-  for (const s of STICKERS) {
+  for (const s of [...STICKERS, ...GOLD_STICKERS]) {
     const d = document.createElement("div"), n = prefs.stickers[s] || 0;
-    d.className = "slot" + (n ? "" : " locked");
+    d.className = "slot" + (n ? "" : " locked") + (GOLD_STICKERS.includes(s) ? " gold" : "");
     d.textContent = n ? s : "?";
     if (n > 1) {
       const b = document.createElement("span");
@@ -947,7 +1054,7 @@ function renderBook() {
     book.appendChild(d);
   }
   const w = prefs.wins;
-  $("winsText").textContent = `פאזלים שפתרתם: קל ${w.easy || 0} · בינוני ${w.medium || 0} · קשה ${w.hard || 0}`;
+  $("winsText").textContent = `פאזלים שפתרתם: קל ${w.easy || 0} · בינוני ${w.medium || 0} · קשה ${w.hard || 0} · אלופים ${w.expert || 0}`;
 }
 
 /* ---------- sheets ---------- */

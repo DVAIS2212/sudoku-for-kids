@@ -9,6 +9,7 @@ A friendly sudoku game in Hebrew that teaches kids how to play. It's a single we
 | Easy   | 4×4 or 6×6   |
 | Medium | 6×6 or 9×9   |
 | Hard   | 9×9          |
+| Champions (אלופים) | 9×9, very few starting squares; needs notes and thinking several steps ahead |
 
 ## Made for learning
 
@@ -22,7 +23,7 @@ A friendly sudoku game in Hebrew that teaches kids how to play. It's a single we
 
 - Play with numbers or animals 🐶
 - Colored boxes, sounds, confetti and star ratings
-- Sticker book: earn a sticker for every puzzle you solve
+- Sticker book: earn a sticker for every puzzle you solve, plus rare gold stickers on the Champions level
 - Suggests the next challenge when a puzzle goes well
 - Remembers the game in progress
 
